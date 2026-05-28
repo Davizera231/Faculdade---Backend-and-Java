@@ -20,7 +20,7 @@ public class EsteiraController {
      * Body esperado:
      * {
      *   "observacao": "...",          // opcional
-     *   "canais": ["SMS","WHATSAPP"]  // opcional — EMAIL sempre é incluído pelo service
+     *   "canais": ["SMS","WHATSAPP"]  // opcional — EMAIL sempre incluído pelo service
      * }
      */
     @PostMapping("/{propostaId}/{acao}")
