@@ -10,9 +10,9 @@ import java.util.*;
 public class Proposta implements Serializable {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private int id;
     @Column(nullable=false, unique=true, length=20) private String codigo; // gerado automaticamente pelo service
-    @NotBlank @Column(nullable=false, length=200) private String titulo;
+    @NotBlank(message = "Título é obrigatório") @Column(nullable=false, length=200) private String titulo;
     @Column(columnDefinition="TEXT") private String descricao;
-    @Positive @Column(nullable=false) private double valor;
+    @Positive(message = "Valor deve ser maior que zero") @Column(nullable=false) private double valor;
     @Column(nullable=false, length=20) private String status = "RASCUNHO";
     @Column(name="etapa_atual", nullable=false, length=50) private String etapaAtual = "CADASTRO";
     @Temporal(TemporalType.TIMESTAMP) @Column(name="data_criacao", nullable=false, updatable=false) private Date dataCriacao = new Date();
