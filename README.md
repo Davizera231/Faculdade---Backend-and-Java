@@ -148,7 +148,9 @@ Cadastra novo cliente.
 | Código | Corpo | Situação |
 |---|---|---|
 | 400 | `{"erro": "Já existe um cliente com este CPF/CNPJ."}` | CPF/CNPJ duplicado |
-| 400 | `{"erro": "..."}` | Campo obrigatório ausente (`nome`, `cpfCnpj`) |
+| 400 | `{"erro": "Nome é obrigatório", "campos": {"nome": "..."}}` | Campo `nome` vazio |
+| 400 | `{"erro": "CPF/CNPJ é obrigatório", "campos": {"cpfCnpj": "..."}}` | Campo `cpfCnpj` vazio |
+| 400 | `{"erro": "E-mail é obrigatório", "campos": {"email": "..."}}` | Campo `email` vazio |
 
 ---
 
@@ -390,10 +392,20 @@ Valores válidos para `{acao}`: `ENVIAR_ANALISE`, `APROVAR`, `REPROVAR`, `REABRI
 
 ## Erros Globais
 
-Todos os erros da API retornam o seguinte formato:
-
+Erros simples retornam:
 ```json
 { "erro": "Mensagem descritiva do problema." }
+```
+
+Erros de validação de campos retornam adicionalmente o mapa de campos:
+```json
+{
+  "erro": "Nome é obrigatório. E-mail é obrigatório",
+  "campos": {
+    "nome": "Nome é obrigatório",
+    "email": "E-mail é obrigatório"
+  }
+}
 ```
 
 | Código HTTP | Situação |
@@ -416,10 +428,16 @@ mvn test -Dtest=PropostaServiceTest
 mvn test -Dtest=PropostaTest
 ```
 
-Cobertura dos testes unitários:
+Cobertura dos testes:
+
+**Testes unitários (sem banco):**
 - `NotificacaoDecoratorTest` — cadeia Decorator de notificações (7 cenários)
-- `PropostaServiceTest` — geração de código, unicidade, CRUD (9 cenários)
+- `PropostaServiceTest` — geração de código, unicidade, CRUD com Mockito (9 cenários)
 - `PropostaTest` — Builder, validações e transições de estado (12 cenários)
+
+**Testes de integração (banco H2 em memória):**
+- `PropostaRepositoryTest` — salvar, listar, filtrar por status, existsByCodigo, deletar (6 cenários)
+- `ClienteRepositoryTest` — salvar, existsByCpfCnpj, unicidade, listar, deletar (5 cenários)
 
 ---
 
@@ -437,4 +455,4 @@ Cobertura dos testes unitários:
 
 ## Versão
 
-`v1.4.0` — Testes unitários JUnit adicionados. `v1.3.0` — PDF obrigatório, código automático, notificações multicanal.
+`v1.6.0` — Testes de integração H2. `v1.5.1` — E-mail obrigatório, toast por campo, campos com borda vermelha. `v1.5.0` — Validação de campos via backend. `v1.4.0` — Testes unitários JUnit. `v1.3.0` — PDF obrigatório, código automático, notificações multicanal.
