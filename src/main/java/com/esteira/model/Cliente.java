@@ -5,8 +5,8 @@ import java.io.Serializable;
 @Entity @Table(name = "cliente")
 public class Cliente implements Serializable {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private int id;
-    @NotBlank @Column(nullable=false, length=150) private String nome;
-    @NotBlank @Column(name="cpf_cnpj", nullable=false, unique=true, length=20) private String cpfCnpj;
+    @NotBlank(message = "Nome é obrigatório") @Column(nullable=false, length=150) private String nome;
+    @NotBlank(message = "CPF/CNPJ é obrigatório") @Column(name="cpf_cnpj", nullable=false, unique=true, length=20) private String cpfCnpj;
     @Column(length=100) private String email;
     @Column(length=20)  private String telefone;
     @Column(length=200) private String endereco;
