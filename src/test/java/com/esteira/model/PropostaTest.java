@@ -180,15 +180,15 @@ class PropostaTest {
     }
 
     @Test
-    @DisplayName("Estado: APROVADA → RASCUNHO ao chamar reabrir()")
-    void estado_aprovadaDeveReabrirParaRascunho() {
+    @DisplayName("Estado: APROVADA não pode ser reaberta")
+    void estado_aprovadaNaoPodeSerReaberta() {
         Proposta p = propostaRascunho();
         p.avancar(); // RASCUNHO → ANALISE
         p.avancar(); // ANALISE  → APROVADA
 
-        p.reabrir(); // APROVADA → RASCUNHO
-
-        assertThat(p.getStatus()).isEqualTo("RASCUNHO");
+        assertThatThrownBy(p::reabrir)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("aprovada");
     }
 
     // ================================================================
