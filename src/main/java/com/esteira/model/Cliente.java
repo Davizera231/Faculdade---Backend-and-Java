@@ -7,7 +7,7 @@ public class Cliente implements Serializable {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private int id;
     @NotBlank(message = "Nome é obrigatório") @Column(nullable=false, length=150) private String nome;
     @NotBlank(message = "CPF/CNPJ é obrigatório") @Column(name="cpf_cnpj", nullable=false, unique=true, length=20) private String cpfCnpj;
-    @Column(length=100) private String email;
+    @NotBlank(message = "E-mail é obrigatório") @Column(nullable=false, length=100) private String email;
     @Column(length=20)  private String telefone;
     @Column(length=200) private String endereco;
     @Column(length=100) private String cidade;
