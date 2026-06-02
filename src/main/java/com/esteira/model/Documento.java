@@ -27,7 +27,7 @@ public class Documento implements Serializable {
     private Date dataUpload = new Date();
 
     @Lob
-    @Column(name = "conteudo", nullable = false)
+    @Column(name = "conteudo", nullable = false, columnDefinition = "LONGBLOB")
     @JsonIgnore                   // não serializar bytes no JSON de listagem
     private byte[] conteudo;
 
