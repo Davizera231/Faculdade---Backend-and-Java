@@ -22,7 +22,7 @@ API REST desenvolvida em **Spring Boot 3.2.5 / Java 21** que gerencia o ciclo de
 - JDK 21 instalado e configurado no `JAVA_HOME`
 - MySQL 8 rodando localmente (ou acessível via rede)
 - Conta Gmail com **App Password** habilitado (autenticação de dois fatores)
-- Maven 3.9+ (ou use o wrapper `./mvnw`)
+- Maven 3.9+
 
 ---
 
@@ -43,186 +43,398 @@ spring.mail.username=SEU_EMAIL@gmail.com
 spring.mail.password=SUA_APP_PASSWORD
 app.email.from=SEU_EMAIL@gmail.com
 
-# Upload de arquivos (máx. 10 MB)
+# Upload (máx. 10 MB)
 spring.servlet.multipart.enabled=true
 spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB
 ```
 
-> **Nota:** nunca comite credenciais reais. Use variáveis de ambiente em produção.
+> **Atenção:** nunca comite credenciais reais. Use variáveis de ambiente em produção.
 
 ---
 
 ## Banco de Dados
 
 ### Novo banco (primeira vez)
-
-Execute o script completo de criação:
-
 ```bash
 mysql -u root -p < src/main/resources/db/schema.sql
 ```
 
-### Banco existente (atualização para v1.3.0)
-
-Execute o script de migração:
-
+### Banco existente (migração para v1.3.0)
 ```bash
 mysql -u root -p < src/main/resources/db/migration.sql
 ```
-
-O Hibernate com `ddl-auto=update` gerencia alterações incrementais automaticamente após isso.
 
 ---
 
 ## Como executar
 
-### Via Maven (terminal)
-
 ```bash
+# Desenvolvimento
 mvn spring-boot:run
-```
 
-### Via NetBeans
-
-1. Clique com o botão direito no projeto → **Properties → Actions**
-2. Selecione a ação **Run Project**
-3. Altere o goal para `spring-boot:run`
-4. Clique em OK e use **Run → Run Project** (F6)
-
-### Via JAR
-
-```bash
+# JAR de produção
 mvn clean package -DskipTests
 java -jar target/esteira-*.jar
 ```
+
+**NetBeans:** botão direito no projeto → Properties → Actions → Run Project → altere o goal para `spring-boot:run`.
 
 A API sobe em `http://localhost:8080`.
 
 ---
 
-## Endpoints Principais
+## Referência completa da API
 
-### Clientes
+> Base URL: `http://localhost:8080`
 
-| Método | Rota | Descrição |
+---
+
+### Clientes — `/clientes`
+
+#### `GET /clientes`
+Lista todos os clientes.
+
+**Resposta 200:**
+```json
+[
+  {
+    "id": 1,
+    "nome": "João Silva",
+    "cpfCnpj": "123.456.789-00",
+    "email": "joao@email.com",
+    "telefone": "11999990000",
+    "tipo": "PESSOA_FISICA",
+    "ativo": true
+  }
+]
+```
+
+---
+
+#### `GET /clientes/{id}`
+Busca cliente por ID.
+
+**Resposta 200:** objeto cliente.
+
+**Erros:**
+| Código | Corpo | Situação |
 |---|---|---|
-| GET | `/clientes` | Lista todos os clientes |
-| GET | `/clientes/{id}` | Busca cliente por ID |
-| POST | `/clientes` | Cadastra novo cliente |
-| PUT | `/clientes/{id}` | Atualiza cliente |
-| DELETE | `/clientes/{id}` | Remove cliente |
+| 404 | `{"erro": "Cliente não encontrado: id=99"}` | ID não existe |
 
-### Propostas
+---
 
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/propostas` | Lista todas as propostas |
-| GET | `/propostas/{id}` | Busca proposta por ID |
-| POST | `/propostas` | Cria nova proposta (código gerado automaticamente) |
-| PUT | `/propostas/{id}` | Atualiza proposta |
-| DELETE | `/propostas/{id}` | Remove proposta |
+#### `POST /clientes`
+Cadastra novo cliente.
 
-### Esteira de Aprovação
-
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/esteira/{id}/acoes` | Lista ações disponíveis para o status atual |
-| POST | `/esteira/{id}/{acao}` | Executa ação (`ENVIAR_ANALISE`, `APROVAR`, `REPROVAR`, `REABRIR`) |
-
-**Body do POST `/esteira/{id}/{acao}`:**
+**Body:**
 ```json
 {
-  "observacao": "Comentário opcional",
+  "nome": "João Silva",
+  "cpfCnpj": "123.456.789-00",
+  "email": "joao@email.com",
+  "telefone": "11999990000",
+  "endereco": "Rua A, 100",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "cep": "01310-100",
+  "tipo": "PESSOA_FISICA"
+}
+```
+
+**Resposta 201:** objeto cliente criado.
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 400 | `{"erro": "Já existe um cliente com este CPF/CNPJ."}` | CPF/CNPJ duplicado |
+| 400 | `{"erro": "..."}` | Campo obrigatório ausente (`nome`, `cpfCnpj`) |
+
+---
+
+#### `PUT /clientes/{id}`
+Atualiza cliente. Mesmo body do POST.
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 404 | `{"erro": "Cliente não encontrado: id=99"}` | ID não existe |
+
+---
+
+#### `DELETE /clientes/{id}`
+Remove cliente.
+
+**Resposta 204:** sem corpo.
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 404 | `{"erro": "Cliente não encontrado: id=99"}` | ID não existe |
+
+---
+
+### Propostas — `/propostas`
+
+#### `GET /propostas`
+Lista todas as propostas ordenadas por data de criação (desc).
+
+Filtro opcional por status: `GET /propostas?status=ANALISE`
+
+Valores válidos para `status`: `RASCUNHO`, `ANALISE`, `APROVADA`, `REPROVADA`.
+
+---
+
+#### `GET /propostas/{id}`
+Busca proposta por ID.
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 404 | `{"erro": "Proposta não encontrada: id=99"}` | ID não existe |
+
+---
+
+#### `POST /propostas`
+Cria nova proposta. O campo `codigo` é gerado automaticamente pelo backend no formato `PROP-YYYYMMDD-NNNNN`.
+
+**Body:**
+```json
+{
+  "titulo": "Desenvolvimento de Sistema",
+  "descricao": "Sistema de gestão para a empresa X",
+  "valor": 25000.00,
+  "observacoes": "Prazo: 3 meses",
+  "cliente": { "id": 1 }
+}
+```
+
+**Resposta 201:**
+```json
+{
+  "id": 10,
+  "codigo": "PROP-20260602-00010",
+  "titulo": "Desenvolvimento de Sistema",
+  "valor": 25000.00,
+  "status": "RASCUNHO",
+  "etapaAtual": "CADASTRO",
+  "dataCriacao": "2026-06-02T10:00:00.000+00:00"
+}
+```
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 400 | `{"erro": "Título obrigatório."}` | Campo `titulo` ausente ou vazio |
+| 400 | `{"erro": "Valor deve ser maior que zero."}` | Campo `valor` zero ou negativo |
+| 400 | `{"erro": "Cliente obrigatório."}` | Campo `cliente` ausente |
+
+---
+
+#### `PUT /propostas/{id}`
+Atualiza proposta. **Permitido apenas no status `RASCUNHO`.**
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 400 | `{"erro": "Edição permitida apenas em RASCUNHO."}` | Proposta não está em RASCUNHO |
+| 404 | `{"erro": "Proposta não encontrada: id=99"}` | ID não existe |
+
+---
+
+#### `DELETE /propostas/{id}`
+Remove proposta.
+
+**Resposta 204:** sem corpo.
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 404 | `{"erro": "Proposta não encontrada: id=99"}` | ID não existe |
+
+---
+
+### Documentos — `/documentos`
+
+#### `GET /documentos/proposta/{id}`
+Lista os metadados dos documentos de uma proposta (sem os bytes do PDF).
+
+---
+
+#### `POST /documentos/proposta/{id}`
+Upload de PDF vinculado a uma proposta.
+
+**Content-Type:** `multipart/form-data`
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| `arquivo` | File (PDF) | Sim |
+| `descricao` | Text | Não |
+
+**Exemplo no Postman:**
+- Método: `POST`
+- URL: `http://localhost:8080/documentos/proposta/10`
+- Body: `form-data` → chave `arquivo` (tipo File) → selecione o PDF
+
+**Resposta 201:**
+```json
+{
+  "id": 5,
+  "nome": "contrato.pdf",
+  "tipo": "application/pdf",
+  "descricao": "Contrato assinado"
+}
+```
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 400 | `{"erro": "Nenhum arquivo enviado."}` | Campo `arquivo` vazio |
+| 400 | `{"erro": "Apenas arquivos PDF são aceitos. Tipo recebido: image/png"}` | Arquivo não é PDF pelo Content-Type |
+| 400 | `{"erro": "O arquivo não é um PDF válido (assinatura de arquivo inválida)."}` | Arquivo com extensão .pdf mas conteúdo inválido (magic bytes errados) |
+| 404 | `{"erro": "Proposta não encontrada: id=99"}` | Proposta não existe |
+
+---
+
+#### `GET /documentos/{id}/download`
+Retorna o binário do PDF.
+
+**Resposta 200:** binário com `Content-Type: application/pdf`.
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 404 | `{"erro": "Documento não encontrado: id=99"}` | Documento não existe |
+
+---
+
+#### `DELETE /documentos/{id}`
+Remove documento.
+
+**Resposta 204:** sem corpo.
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 404 | `{"erro": "Documento não encontrado: id=99"}` | Documento não existe |
+
+---
+
+### Esteira de Aprovação — `/esteira`
+
+#### `GET /esteira/{propostaId}/acoes`
+Retorna as ações disponíveis para o status atual da proposta.
+
+**Resposta 200:**
+```json
+{
+  "propostaId": 10,
+  "acoesDisponiveis": ["ENVIAR_ANALISE"]
+}
+```
+
+Mapeamento de ações por status:
+
+| Status atual | Ações disponíveis |
+|---|---|
+| `RASCUNHO` | `ENVIAR_ANALISE` |
+| `ANALISE` | `APROVAR`, `REPROVAR` |
+| `REPROVADA` | `REABRIR` |
+| `APROVADA` | *(nenhuma)* |
+
+**Erros:**
+| Código | Corpo | Situação |
+|---|---|---|
+| 404 | `{"erro": "Proposta não encontrada: id=99"}` | Proposta não existe |
+
+---
+
+#### `POST /esteira/{propostaId}/{acao}`
+Executa uma ação na esteira.
+
+Valores válidos para `{acao}`: `ENVIAR_ANALISE`, `APROVAR`, `REPROVAR`, `REABRIR`.
+
+**Body (todos os campos opcionais):**
+```json
+{
+  "observacao": "Aprovado após análise jurídica",
   "canais": ["SMS", "WHATSAPP"]
 }
 ```
+
 > `EMAIL` é sempre enviado automaticamente. Valores possíveis para `canais`: `SMS`, `WHATSAPP`, `FACEBOOK`.
 
-### Documentos
+**Resposta 200:**
+```json
+{
+  "mensagem": "Ação executada com sucesso.",
+  "propostaId": 10,
+  "codigo": "PROP-20260602-00010",
+  "status": "ANALISE",
+  "etapa": "ANALISE"
+}
+```
 
-| Método | Rota | Descrição |
+**Erros:**
+| Código | Corpo | Situação |
 |---|---|---|
-| GET | `/documentos/proposta/{id}` | Lista documentos de uma proposta |
-| POST | `/documentos/proposta/{id}` | Upload de PDF (`multipart/form-data`, campo `arquivo`) |
-| GET | `/documentos/{id}/download` | Download do PDF |
-| DELETE | `/documentos/{id}` | Remove documento |
+| 400 | `{"erro": "Não é possível reprovar uma proposta em rascunho."}` | Ação inválida para o status atual |
+| 400 | `{"erro": "Proposta já aprovada. Nenhuma transição disponível."}` | Tentar avançar proposta aprovada |
+| 400 | `{"erro": "Não é possível reabrir uma proposta em análise."}` | Tentar reabrir proposta em análise |
+| 400 | `{"erro": "Proposta já está reprovada."}` | Tentar reprovar proposta já reprovada |
+| 400 | `{"erro": "Use 'reabrir' para retornar ao rascunho."}` | Tentar avançar proposta reprovada |
+| 400 | `{"erro": "Ação desconhecida: XPTO"}` | Ação enviada não existe |
+| 404 | `{"erro": "Proposta não encontrada: id=99"}` | Proposta não existe |
 
 ---
 
-## Design Patterns Utilizados
+## Erros Globais
 
-### State Pattern — Ciclo de vida da Proposta
-Cada status (`RASCUNHO`, `EM_ANALISE`, `APROVADA`, `REPROVADA`) é representado por uma classe concreta de `EstadoProposta`. A transição é feita pelo próprio objeto de estado, impedindo transições inválidas.
+Todos os erros da API retornam o seguinte formato:
 
-```
-EstadoProposta (interface)
-├── EstadoRascunho      → permite: enviarParaAnalise()
-├── EstadoEmAnalise     → permite: aprovar(), reprovar()
-├── EstadoAprovada      → permite: reabrir()
-└── EstadoReprovada     → permite: reabrir()
+```json
+{ "erro": "Mensagem descritiva do problema." }
 ```
 
-### Command Pattern — Ações da esteira
-Cada ação é encapsulada em um comando desacoplado do controller.
-
-```
-ComandoEsteira (interface)
-├── ComandoEnviarAnalise
-├── ComandoAprovar
-├── ComandoReprovar
-└── ComandoReabrir
-```
-`FabricaComandoEsteira.criar(acao)` instancia o comando correto.
-
-### Decorator Pattern — Notificações
-`NotificacaoEmail` é o componente base (sempre executado). Canais opcionais decoram dinamicamente a cadeia em runtime.
-
-```
-Notificavel (interface)
-└── NotificacaoEmail (base obrigatória)
-    └── NotificacaoSMS (opcional)
-        └── NotificacaoWhatsApp (opcional)
-            └── NotificacaoFacebook (opcional)
-```
-
-### Builder Pattern — Entidades JPA
-Todas as entidades (`Cliente`, `Proposta`, `Documento`) possuem inner class `Builder` para construção fluente.
-
-### Factory Method — FabricaComandoEsteira
-Centraliza a criação dos comandos e a consulta das ações disponíveis por status.
+| Código HTTP | Situação |
+|---|---|
+| 400 Bad Request | Regra de negócio violada, campo inválido, ação inválida, arquivo inválido |
+| 404 Not Found | Recurso não encontrado (cliente, proposta ou documento inexistente) |
+| 500 Internal Server Error | Erro inesperado no servidor |
 
 ---
 
-## Estrutura de Pastas
+## Testes
 
+```bash
+# Rodar todos os testes
+mvn test
+
+# Rodar um teste específico
+mvn test -Dtest=NotificacaoDecoratorTest
+mvn test -Dtest=PropostaServiceTest
+mvn test -Dtest=PropostaTest
 ```
-esteira-backend/
-└── src/main/java/com/esteira/
-    ├── config/          # Beans Spring (NotificacaoConfig, etc.)
-    ├── controller/      # REST Controllers
-    ├── model/           # Entidades JPA (Cliente, Proposta, Documento)
-    ├── repository/      # Interfaces Spring Data JPA
-    ├── service/         # Lógica de negócio
-    ├── estado/          # State Pattern
-    ├── comando/         # Command Pattern
-    ├── fabrica/         # Factory Method
-    └── notificacao/     # Decorator Pattern
-```
+
+Cobertura dos testes unitários:
+- `NotificacaoDecoratorTest` — cadeia Decorator de notificações (7 cenários)
+- `PropostaServiceTest` — geração de código, unicidade, CRUD (9 cenários)
+- `PropostaTest` — Builder, validações e transições de estado (12 cenários)
 
 ---
 
-## Regras de Negócio
+## Design Patterns
 
-- **RN-01** Código da proposta gerado automaticamente no formato `PROP-YYYYMMDD-NNNNN`.
-- **RN-02** Documento PDF obrigatório na criação da proposta.
-- **RN-03** PDF validado por Content-Type **e** magic bytes (`%PDF`).
-- **RN-04** E-mail sempre enviado; outros canais são opcionais.
-- **RN-05** Fluxo de status: `RASCUNHO → EM_ANALISE → APROVADA/REPROVADA → RASCUNHO`.
-- **RN-06** Tamanho máximo de upload: 10 MB.
+| Pattern | Onde | Finalidade |
+|---|---|---|
+| **State** | `estado/` | Controla transições de status da proposta |
+| **Command** | `command/` | Encapsula cada ação da esteira |
+| **Factory Method** | `factory/FabricaComandoEsteira` | Instancia o comando correto por ação |
+| **Decorator** | `notification/` | Monta cadeia de notificações em runtime |
+| **Builder** | Entidades JPA | Construção fluente de `Cliente`, `Proposta`, `Documento` |
 
 ---
 
 ## Versão
 
-`v1.3.0` — Documento PDF obrigatório, código de proposta automático, notificações multicanal.
+`v1.4.0` — Testes unitários JUnit adicionados. `v1.3.0` — PDF obrigatório, código automático, notificações multicanal.
