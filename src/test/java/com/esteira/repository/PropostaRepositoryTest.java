@@ -161,7 +161,9 @@ class PropostaRepositoryTest {
                 .cliente(cliente)
                 .status(status)
                 .build();
-        p.setCodigo("PROP-TEST-" + System.nanoTime());
+        // Código com no máximo 20 chars: "PT-" + últimos 17 dígitos do nanoTime
+        String nano = String.valueOf(System.nanoTime());
+        p.setCodigo("PT-" + nano.substring(Math.max(0, nano.length() - 17)));
         return propostaRepo.save(p);
     }
 
