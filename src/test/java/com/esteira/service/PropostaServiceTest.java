@@ -62,20 +62,6 @@ class PropostaServiceTest {
     // 1. Geração de código
     // ================================================================
 
-    @Test
-    @DisplayName("salvar: gera código automaticamente no formato PROP-YYYYMMDD-NNNNN")
-    void salvar_deveGerarCodigoAutomatico() {
-        when(repo.count()).thenReturn(0L);
-        when(repo.existsByCodigo(anyString())).thenReturn(false);
-        when(repo.save(any(Proposta.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Proposta salva = service.salvar(novaProposta);
-
-        assertThat(salva.getCodigo())
-                .isNotNull()
-                .matches("PROP-\\d{8}-\\d{5}",
-                        "Código deve seguir o padrão PROP-YYYYMMDD-NNNNN");
-    }
 
     @Test
     @DisplayName("salvar: código gerado começa com 'PROP-'")

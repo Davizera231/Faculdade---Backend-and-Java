@@ -161,7 +161,8 @@ class PropostaRepositoryTest {
                 .cliente(cliente)
                 .status(status)
                 .build();
-        p.setCodigo("PROP-TEST-" + System.nanoTime());
+                String nano = String.valueOf(System.nanoTime());
+                p.setCodigo("PT-" + nano.substring(Math.max(0, nano.length() - 17)));
         return propostaRepo.save(p);
     }
 
